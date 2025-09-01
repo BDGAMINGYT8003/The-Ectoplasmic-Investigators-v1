@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>The Evidence - Gallery</title>
+
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="common.css">
+
+    <style>
+
+        /*===============================================
+          1. ROOT & GLOBAL STYLES
+        =================================================*/
+        :root {
+            --primary-bg: #0d0d0d;
+            --secondary-bg: #1a1a1a;
+            --accent-color: #66eeff;
+            --accent-color-translucent: rgba(102, 238, 255, 0.05);
+            --text-color: #f0f0f0;
+            --border-color: #444;
+            --status-border-color: var(--accent-color);
+            --success-color: #00ff99;
+            --warning-color: #ffaa00;
+            --danger-color: #ff4444;
+            --nav-width: 300px;
+            --font-main: 'VT323', monospace;
+            --spacing-unit: 1rem;
+            --transition-speed-fast: 0.3s;
+            --transition-speed-slow: 0.4s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            scrollbar-width: none;
+        }
+
+        html::-webkit-scrollbar { display: none; }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+
+        body.modal-is-open {
+            overflow: hidden;
+        }
+
+        /*===============================================
+          2. VISUAL EFFECTS (GRID, SCANLINES)
+        =================================================*/
+        .grid-overlay, .scanline-effect {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none; z-index: -10;
+        }
+        .grid-overlay {
+            background-image:
+                linear-gradient(90deg, var(--accent-color-translucent) 1px, transparent 1px),
+                linear-gradient(var(--accent-color-translucent) 1px, transparent 1px);
+            background-size: 25px 25px;
+        }
+        .scanline-effect {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            animation: scanline-animation 12s linear infinite;
+        }
+        @keyframes scanline-animation { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+        /*===============================================
+          3. NAVIGATION SYSTEM
+        =================================================*/
+        .nav-toggle-handle {
+            background: var(--secondary-bg);
+            border-bottom: 2px solid var(--accent-color);
+            padding: calc(var(--spacing-unit) * 0.75);
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--accent-color);
+            cursor: pointer;
+            position: sticky; top: 0;
+            z-index: 1000;
+            transition: color var(--transition-speed-fast) ease, background-color var(--transition-speed-fast) ease;
+        }
+        .nav-toggle-handle:hover { background-color: var(--accent-color); color: var(--primary-bg); }
+
+        .main-navigation {
+            position: fixed; top: 0; left: 0;
+            width: var(--nav-width); max-width: 90vw; height: 100vh;
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-unit);
+            z-index: 2000;
+            display: flex; flex-direction: column; gap: 0.5rem;
+            transform: translateX(-100%);
+            transition: transform var(--transition-speed-slow) ease-in-out;
+            overflow-y: auto;
+        }
+        .nav-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+            opacity: 0; pointer-events: none;
+            transition: opacity var(--transition-speed-slow) ease-in-out;
+        }
+        body.nav-open .main-navigation { transform: translateX(0); }
+        body.nav-open .nav-overlay { opacity: 1; pointer-events: auto; }
+        body.nav-open .app-container { transform: scale(0.98); filter: blur(3px) brightness(0.6); pointer-events: none; user-select: none; }
+        .nav-button {
+            display: flex; align-items: center; gap: 0.75rem; padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+            background: var(--primary-bg); border: 1px solid var(--border-color); color: var(--text-color); text-decoration: none; font-size: 1.1em;
+            transition: all var(--transition-speed-fast) ease;
+        }
+        .nav-button.current-page { background: var(--accent-color); color: var(--primary-bg); }
+        .nav-button .fa-fw { width: 20px; text-align: center; }
+        .status-panel { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--spacing-unit); padding: var(--spacing-unit); border: 2px solid var(--status-border-color); background: var(--primary-bg); font-size: 1.2em; text-align: center; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 8px; vertical-align: middle; }
+        .status-active { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); animation: blink-animation 1s step-end infinite; }
+        .status-passive { background-color: var(--passive-color); animation: none; }
+        @keyframes blink-animation { 50% { opacity: 0; } }
+
+        /*===============================================
+          4. LAYOUT & STRUCTURE
+        =================================================*/
+        .app-container {
+            padding: var(--spacing-unit);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-unit);
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fade-in 1s ease-out forwards;
+            transition: transform var(--transition-speed-slow) ease-in-out, filter var(--transition-speed-slow) ease-in-out;
+            transform-origin: center;
+        }
+        @keyframes fade-in { to { opacity: 1; } }
+
+        /*===============================================
+          5. HEADER & FOOTER
+        =================================================*/
+        .header, .footer { text-align: center; padding: calc(var(--spacing-unit) * 1.5) var(--spacing-unit); background: var(--secondary-bg); border: 1px solid var(--border-color); position: relative; overflow: hidden; opacity: 0; }
+        .header { transform: translateY(-100%); animation: slide-in-down 0.8s ease-out 0.2s forwards; }
+        .evidence-grid { opacity: 1; /* animation: slide-in-up 0.8s ease-out 0.4s forwards; */ }
+        .footer { transform: translateY(100%); animation: slide-in-up 0.8s ease-out 0.6s forwards; }
+        @keyframes slide-in-down { to { transform: translateY(0); opacity: 1; } }
+        @keyframes slide-in-up { to { transform: translateY(0); opacity: 1; } }
+
+        .header::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent-color); animation: header-scan 2.5s linear infinite; }
+        @keyframes header-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .header h1 { font-size: clamp(2rem, 6vw, 2.5rem); margin-bottom: 0.25rem; font-weight: normal; }
+        .header p { font-size: clamp(1rem, 4vw, 1.2rem); color: var(--accent-color); }
+        .footer p { margin: 0.25rem 0; }
+        .footer .copyright-info { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+
+        /*===============================================
+          6. EVIDENCE GALLERY
+        =================================================*/
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-unit);
+            align-items: start; /* Align items to the top of their grid cell for masonry effect */
+        }
+
+        .evidence-card {
+            background: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            break-inside: avoid; /* Helps with masonry effect in some contexts */
+            opacity: 0;
+        }
+
+        /* === FIX: Removed fixed height and object-fit for natural aspect ratio === */
+        .evidence-card img {
+            width: 100%;
+            height: auto; /* Let height be determined by aspect ratio */
+            display: block;
+        }
+
+        .image-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            color: var(--accent-color);
+            opacity: 0;
+        }
+
+
+        .easter-egg { font-size: 1.1em; color: rgba(240, 240, 240, 0.05); border-top: 1px dotted var(--border-color); padding-top: 1rem; margin-top: auto; align-self: flex-start; transition: color var(--transition-speed-fast) ease; cursor: pointer; user-select: none; }
+        .easter-egg:hover { color: var(--accent-color); }
+        .easter-egg.is-revealed { color: var(--danger-color); animation: pulse-red 1.5s ease-in-out infinite; }
+        .easter-egg.is-revealed:hover { color: var(--danger-color); }
+        .easter-egg.is-revealed::after { display: none; }
+        .easter-egg::after { content: '_'; animation: blink-caret 1s steps(2, start) infinite; }
+        @keyframes blink-caret { 50% { opacity: 0; } }
+        @keyframes pulse-red { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+        @media (max-width: 900px) {
+            .modal-content { flex-direction: column; }
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="preloader"><div class="spinner"></div></div>
+    <div class="grid-overlay"></div>
+    <div class="scanline-effect"></div>
+
+    <!-- COMMAND NAVIGATION -->
+    <div class="nav-toggle-handle" id="nav-toggle" role="button" aria-expanded="false" aria-controls="main-navigation">
+        <i class="fa-solid fa-bars"></i> COMMAND NAVIGATION
+    </div>
+    <nav class="main-navigation" id="main-navigation" aria-hidden="true">
+        <div class="status-panel">
+            <span>STATUS: <span id="system-operational-status">ACTIVE</span><span class="status-indicator status-active" id="status-indicator"></span></span>
+        </div>
+        <a href="index.html" class="nav-button"><i class="fa-solid fa-desktop fa-fw"></i> COMMAND CENTER</a>
+        <a href="dossier.html" class="nav-button"><i class="fa-solid fa-address-card fa-fw"></i> THE DOSSIER</a>
+        <a href="laboratory.html" class="nav-button"><i class="fa-solid fa-flask-vial fa-fw"></i> THE LABORATORY</a>
+        <a href="casefiles.html" class="nav-button"><i class="fa-solid fa-folder-open fa-fw"></i> CASE FILES</a>
+        <a href="evidence.html" class="nav-button current-page"><i class="fa-solid fa-box-archive fa-fw"></i> EVIDENCE ARCHIVES</a>
+        <a href="chronicle.html" class="nav-button"><i class="fa-solid fa-book fa-fw"></i> FIELD CHRONICLE</a>
+        <a href="oracle.html" class="nav-button"><i class="fa-solid fa-database fa-fw"></i> COMMAND ORACLE</a>
+        <a href="dispatch.html" class="nav-button"><i class="fa-solid fa-headset fa-fw"></i> DISPATCH INQUIRY</a>
+    </nav>
+    <div class="nav-overlay" id="nav-overlay"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="app-container">
+        <header class="header">
+            <h1>THE EVIDENCE</h1>
+            <p>Spectral Records: Investigating the Other Side</p>
+        </header>
+
+        <main class="evidence-grid">
+
+            <section class="evidence-card" data-title="Artifact #001" data-img-src="images/IMG-20250217-WA0004.jpg" data-type="Spectral Frequency Recording" data-description="Audio analysis printout showcasing peaks of unexplained frequency, captured from radios in Koelpur during midnight static events. Possible djinn voice fragments detected." data-date="2024-03-10" data-clue='Hidden clue: "Frequency analysis holds secrets... within the static."'>
+                <img src="images/IMG-20250217-WA0004.jpg" alt="Spectral Frequency Recording from Koelpur">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #002" data-img-src="images/FB_IMG_1739953366991.jpg" data-type="Bamboo Grove Mud Sample" data-description="A sample of mud collected from the vanishing point of footprints in Amtali. Analysis reveals faint, unidentifiable imprints beneath the surface and traces of ectoplasmic residue." data-date="2024-03-12" data-clue='Hidden clue: "Imprints in mud... whispers of unseen passage."'>
+                <img src="images/FB_IMG_1739953366991.jpg" alt="Amtali Bamboo Grove Mud Sample">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #003" data-img-src="images/evidence3.png" data-type="Zamindar Bari Clock Hand" data-description="A clock hand recovered from the ruins of Shonargaon Zamindar Bari, exhibiting temporal distortions. Chronometer readings fluctuate wildly near the artifact, suggesting localized time anomaly." data-date="2024-03-15" data-clue='Hidden clue: "Time bends here... observe the curvature."'>
+                <img src="images/evidence3.png" alt="Shonargaon Zamindar Bari Clock Hand">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #004" data-img-src="images/evidence4.png" data-type="Bottola Baobab Bark Scraping" data-description="Bark sample from the Whispering Baobab of Bottola. Spectral analysis indicates residual vocal energy imprinted within the cellular structure, correlating with villagers' accounts of whispered names." data-date="2024-03-18" data-clue='Hidden clue: "The tree remembers... the bark may speak volumes."'>
+                <img src="images/evidence4.png" alt="Bottola Baobab Bark Scraping">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #005" data-img-src="images/evidence5.png" data-type="Dhoar Paani Lake Water Specimen" data-description="Water sample from Joynagar's Dhoar Paani Lake. Photographic emulsion tests revealed faint, ephemeral images imprinted upon development, mirroring phantom visions described by villagers." data-date="2024-03-20" data-clue='Hidden clue: "Water remembers faces... some lost to the depths."'>
+                <img src="images/evidence5.png" alt="Dhoar Paani Lake Water Specimen">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #006" data-img-src="images/evidence6.png" data-type="Kumarpur Cursed Charpai Wood Shard" data-description="Fragment of wood taken from the Cursed Charpai of Kumarpur. Subject exhibits heightened REM sleep activity and vivid nightmare recall when in proximity, validating claims of nocturnal torment." data-date="2024-03-22" data-clue='Hidden clue: "Wood holds echoes of nightmares... beware the slumber."'>
+                <img src="images/evidence6.png" alt="Kumarpur Cursed Charpai Wood Shard">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #007" data-img-src="images/evidence7.png" data-type="Shimultola Silk Cotton Tree Resin" data-description="Resin sample collected from the Screaming Silk Cotton Tree of Shimultola. Sonic analysis reveals complex sound patterns within, amplified during full moon phases, aligning with reports of bloodcurdling screams." data-date="2024-03-25" data-clue='Hidden clue: "Resin captures cries... nature’s lament or something else?"'>
+                <img src="images/evidence7.png" alt="Shimultola Silk Cotton Tree Resin">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #008" data-img-src="images/evidence8.png" data-type="Polashpur Night Market Shadow Dust" data-description="Minute dust particles collected from Polashpur Night Market after spectral events. When illuminated by specific wavelengths, particles project fleeting shadow puppet-like forms, mimicking vendor descriptions." data-date="2024-03-27" data-clue='Hidden clue: "Dust remembers dances... shadows reveal the players."'>
+                <img src="images/evidence8.png" alt="Polashpur Night Market Shadow Dust">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #009" data-img-src="images/evidence9.png" data-type="Anderkilla Weeping Well Stone Fragment" data-description="Stone fragment from the inner lining of Anderkilla's Weeping Well. Hygroscopic properties are abnormally high, retaining moisture and emitting faint sonic vibrations resembling human weeping even when outwardly dry." data-date="2024-03-29" data-clue='Hidden clue: "Stone weeps secrets... listen to the damp resonance."'>
+                <img src="images/evidence9.png" alt="Anderkilla Weeping Well Stone Fragment">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+            <section class="evidence-card" data-title="Artifact #010" data-img-src="images/evidence10.png" data-type="Minarpara Musjid Minaret Survey Data" data-description="Geodetic survey data documenting nocturnal shifts in the Minarpara Musjid minaret's position. Discrepancies indicate subtle, non-tectonic movements occurring consistently during night hours." data-date="2024-04-01" data-clue='Hidden clue: "Data reveals wanderings... structures too can stir at night."'>
+                <img src="images/evidence10.png" alt="Minarpara Musjid Minaret Survey Data">
+                <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
+            </section>
+
+        </main>
+
+        <footer class="footer">
+            <p class="copyright-info"><i class="fa-regular fa-copyright"></i> 2025 THE ECTOPLASMIC INVESTIGATORS</p>
+            <p>SECRET LOGS AWAIT DISCOVERY</p>
+        </footer>
+    </div>
+
+    <!-- MODAL HTML (SIMPLIFIED) -->
+    <div class="modal" id="evidence-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal-content">
+            <button class="modal-close" title="Close (Esc)">&times;</button>
+            <div class="modal-image-wrapper"><img id="modal-img" src="" alt="Enlarged evidence"></div>
+            <div class="modal-details-wrapper">
+                <div class="modal-details">
+                    <h2 id="modal-title"></h2>
+                    <ul id="modal-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // NAVIGATION SYSTEM LOGIC
+            const navToggle = document.getElementById('nav-toggle');
+            const navPanel = document.getElementById('main-navigation');
+            const navOverlay = document.getElementById('nav-overlay');
+            const toggleNav = () => {
+                const isNavOpen = document.body.classList.toggle('nav-open');
+                navToggle.setAttribute('aria-expanded', isNavOpen);
+                navPanel.setAttribute('aria-hidden', !isNavOpen);
+            };
+            navToggle.addEventListener('click', toggleNav);
+            navOverlay.addEventListener('click', toggleNav);
+
+            // Prevent navigation to current page
+            document.querySelectorAll('.nav-button.current-page').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+            });
+
+            const updateSystemOperationalStatus = () => {
+                const bdHour = new Date(new Date().getTime() + (36e5 * 6) + (new Date().getTimezoneOffset() * 6e4)).getHours();
+                const newStatus = (bdHour >= 1 && bdHour < 7) ? 'PASSIVE' : 'ACTIVE';
+                const statusEl = document.getElementById('system-operational-status');
+                if (statusEl && statusEl.textContent !== newStatus) {
+                    const indicatorEl = document.getElementById('status-indicator');
+                    statusEl.textContent = newStatus;
+                    indicatorEl.classList.toggle('status-active', newStatus === 'ACTIVE');
+                    indicatorEl.classList.toggle('status-passive', newStatus === 'PASSIVE');
+                }
+            };
+            updateSystemOperationalStatus();
+            setInterval(updateSystemOperationalStatus, 60000);
+
+            // SIMPLIFIED MODAL LOGIC
+            const evidenceCards = document.querySelectorAll('.evidence-card');
+            const modal = document.getElementById('evidence-modal');
+            if (!modal || !evidenceCards.length) return;
+
+            const modalImg = document.getElementById('modal-img');
+            const modalTitle = document.getElementById('modal-title');
+            const modalList = document.getElementById('modal-list');
+            const closeButton = modal.querySelector('.modal-close');
+
+            const showModal = (card) => {
+                // Immediately clear all content first
+                modalImg.src = '';
+                modalImg.alt = '';
+                modalTitle.textContent = '';
+                modalList.innerHTML = '';
+
+                // Hide modal completely
+                hideModal();
+
+                // Wait for hide transition to complete, then update content
+                setTimeout(() => {
+                    const data = card.dataset;
+                    modalImg.src = data.imgSrc;
+                    modalImg.alt = card.querySelector('img').alt;
+                    modalTitle.textContent = data.title;
+                    modalList.innerHTML = `
+                        <li><strong>Evidence Type:</strong> <span>${data.type}</span></li>
+                        <li><strong>Description:</strong> <span>${data.description}</span></li>
+                        <li><strong>Date of Discovery:</strong> <span>${data.date}</span></li>
+                        <li><span class="easter-egg">${data.clue}</span></li>
+                    `;
+
+                    const clueElement = modalList.querySelector('.easter-egg');
+                    if (clueElement) {
+                        clueElement.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            clueElement.classList.toggle('is-revealed');
+                        });
+                    }
+
+                    modal.classList.add('is-visible');
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('modal-is-open');
+                }, 300);
+            };
+
+            const hideModal = () => {
+                modal.classList.remove('is-visible');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('modal-is-open');
+            };
+
+            evidenceCards.forEach(card => {
+                card.addEventListener('click', () => showModal(card));
+            });
+
+            closeButton.addEventListener('click', hideModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) hideModal();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('is-visible')) {
+                    hideModal();
+                }
+            });
+        });
+    </script>
+    <script src="common.js"></script>
+</body>
+</html>

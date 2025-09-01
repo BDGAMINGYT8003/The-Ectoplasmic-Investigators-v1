@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>The Chronicle - Investigations Log</title>
+
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="common.css">
+
+    <style>
+
+        /*===============================================
+          1. ROOT & GLOBAL STYLES
+        =================================================*/
+        :root {
+            --primary-bg: #0d0d0d;
+            --secondary-bg: #1a1a1a;
+            --accent-color: #66eeff;
+            --accent-color-translucent: rgba(102, 238, 255, 0.05);
+            --text-color: #f0f0f0;
+            --border-color: #444;
+            --status-border-color: var(--accent-color);
+            --success-color: #00ff99;
+            --warning-color: #ffaa00;
+            --danger-color: #ff4444;
+            --nav-width: 300px;
+            --font-main: 'VT323', monospace;
+            --spacing-unit: 1rem;
+            --transition-speed-fast: 0.3s;
+            --transition-speed-slow: 0.4s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            scrollbar-width: none;
+        }
+
+        html::-webkit-scrollbar { display: none; }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+
+        /*===============================================
+          2. VISUAL EFFECTS (GRID, SCANLINES)
+        =================================================*/
+        .grid-overlay, .scanline-effect {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none; z-index: -10;
+        }
+        .grid-overlay {
+            background-image:
+                linear-gradient(90deg, var(--accent-color-translucent) 1px, transparent 1px),
+                linear-gradient(var(--accent-color-translucent) 1px, transparent 1px);
+            background-size: 25px 25px;
+        }
+        .scanline-effect {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            animation: scanline-animation 12s linear infinite;
+        }
+        @keyframes scanline-animation { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+        /*===============================================
+          3. NAVIGATION SYSTEM
+        =================================================*/
+        .nav-toggle-handle {
+            background: var(--secondary-bg);
+            border-bottom: 2px solid var(--accent-color);
+            padding: calc(var(--spacing-unit) * 0.75);
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--accent-color);
+            cursor: pointer;
+            position: sticky; top: 0;
+            z-index: 1000;
+            transition: color var(--transition-speed-fast) ease, background-color var(--transition-speed-fast) ease;
+        }
+        .nav-toggle-handle:hover { background-color: var(--accent-color); color: var(--primary-bg); }
+
+        .main-navigation {
+            position: fixed; top: 0; left: 0;
+            width: var(--nav-width); max-width: 90vw; height: 100vh;
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-unit);
+            z-index: 2000;
+            display: flex; flex-direction: column; gap: 0.5rem;
+            transform: translateX(-100%);
+            transition: transform var(--transition-speed-slow) ease-in-out;
+            overflow-y: auto;
+        }
+        .nav-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+            opacity: 0; pointer-events: none;
+            transition: opacity var(--transition-speed-slow) ease-in-out;
+        }
+        body.nav-open .main-navigation { transform: translateX(0); }
+        body.nav-open .nav-overlay { opacity: 1; pointer-events: auto; }
+        body.nav-open .app-container { transform: scale(0.98); filter: blur(3px) brightness(0.6); pointer-events: none; user-select: none; }
+        .nav-button {
+            display: flex; align-items: center; gap: 0.75rem; padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+            background: var(--primary-bg); border: 1px solid var(--border-color); color: var(--text-color); text-decoration: none; font-size: 1.1em;
+            transition: all var(--transition-speed-fast) ease;
+        }
+        .nav-button.current-page { background: var(--accent-color); color: var(--primary-bg); }
+        .nav-button .fa-fw { width: 20px; text-align: center; }
+        .status-panel { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--spacing-unit); padding: var(--spacing-unit); border: 2px solid var(--status-border-color); background: var(--primary-bg); font-size: 1.2em; text-align: center; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 8px; vertical-align: middle; }
+        .status-active { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); animation: blink-animation 1s step-end infinite; }
+        .status-passive { background-color: var(--passive-color); animation: none; }
+        @keyframes blink-animation { 50% { opacity: 0; } }
+
+        /*===============================================
+          4. LAYOUT & STRUCTURE
+        =================================================*/
+        .app-container {
+            padding: var(--spacing-unit);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-unit);
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fade-in 1s ease-out forwards;
+            transition: transform var(--transition-speed-slow) ease-in-out, filter var(--transition-speed-slow) ease-in-out;
+            transform-origin: center;
+        }
+        @keyframes fade-in { to { opacity: 1; } }
+
+        /*===============================================
+          5. HEADER & FOOTER
+        =================================================*/
+        .header, .footer { text-align: center; padding: calc(var(--spacing-unit) * 1.5) var(--spacing-unit); background: var(--secondary-bg); border: 1px solid var(--border-color); position: relative; overflow: hidden; opacity: 0; }
+        .header { transform: translateY(-100%); animation: slide-in-down 0.8s ease-out 0.2s forwards; }
+        .entry-grid { opacity: 1; /* animation: slide-in-up 0.8s ease-out 0.4s forwards; */ }
+        .footer { transform: translateY(100%); animation: slide-in-up 0.8s ease-out 0.6s forwards; }
+        @keyframes slide-in-down { to { transform: translateY(0); opacity: 1; } }
+        @keyframes slide-in-up { to { transform: translateY(0); opacity: 1; } }
+
+        .header::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent-color); animation: header-scan 2.5s linear infinite; }
+        @keyframes header-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .header h1 { font-size: clamp(2rem, 6vw, 2.5rem); margin-bottom: 0.25rem; font-weight: normal; }
+        .header p { font-size: clamp(1rem, 4vw, 1.2rem); color: var(--accent-color); }
+        .footer p { margin: 0.25rem 0; }
+        .footer .copyright-info { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+
+        /*===============================================
+          6. CHRONICLE ENTRY GRID (STYLED LIKE CASE FILES)
+        =================================================*/
+        .entry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--spacing-unit);
+        }
+
+        .entry-card {
+            background: var(--secondary-bg);
+            border: 4px double var(--border-color);
+            box-shadow: 7px 7px 0px var(--primary-bg);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            opacity: 0;
+        }
+
+        .entry-card h2 { font-size: 2em; color: var(--accent-color); font-weight: normal; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+
+        .entry-details { list-style-type: none; padding: 0; font-size: 1.2em; text-align: left; flex-grow: 1; display: flex; flex-direction: column; gap: 0.75rem; }
+        .entry-details li { display: flex; flex-direction: column; }
+        .entry-details li strong { color: var(--accent-color); font-weight: normal; margin-bottom: 0.25rem; display: block; }
+
+        .easter-egg {
+            font-size: 1.1em;
+            color: rgba(240, 240, 240, 0.05);
+            border-top: 1px dotted var(--border-color);
+            padding-top: 1rem;
+            margin-top: auto;
+            align-self: flex-start;
+            transition: color var(--transition-speed-fast) ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .easter-egg:hover { color: var(--accent-color); }
+        .easter-egg.is-revealed { color: var(--danger-color); animation: pulse-red 1.5s ease-in-out infinite; }
+        .easter-egg.is-revealed:hover { color: var(--danger-color); }
+        .easter-egg.is-revealed::after { display: none; }
+        .easter-egg::after { content: '_'; animation: blink-caret 1s steps(2, start) infinite; }
+        @keyframes blink-caret { 50% { opacity: 0; } }
+        @keyframes pulse-red { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+    </style>
+</head>
+
+<body>
+    <div class="preloader"><div class="spinner"></div></div>
+    <div class="grid-overlay"></div>
+    <div class="scanline-effect"></div>
+
+    <!-- COMMAND NAVIGATION -->
+    <div class="nav-toggle-handle" id="nav-toggle" role="button" aria-expanded="false" aria-controls="main-navigation">
+        <i class="fa-solid fa-bars"></i> COMMAND NAVIGATION
+    </div>
+    <nav class="main-navigation" id="main-navigation" aria-hidden="true">
+        <div class="status-panel">
+            <span>STATUS: <span id="system-operational-status">ACTIVE</span><span class="status-indicator status-active" id="status-indicator"></span></span>
+        </div>
+        <a href="index.html" class="nav-button"><i class="fa-solid fa-desktop fa-fw"></i> COMMAND CENTER</a>
+        <a href="dossier.html" class="nav-button"><i class="fa-solid fa-address-card fa-fw"></i> THE DOSSIER</a>
+        <a href="laboratory.html" class="nav-button"><i class="fa-solid fa-flask-vial fa-fw"></i> THE LABORATORY</a>
+        <a href="casefiles.html" class="nav-button"><i class="fa-solid fa-folder-open fa-fw"></i> CASE FILES</a>
+        <a href="evidence.html" class="nav-button"><i class="fa-solid fa-box-archive fa-fw"></i> EVIDENCE ARCHIVES</a>
+        <a href="chronicle.html" class="nav-button current-page"><i class="fa-solid fa-book fa-fw"></i> FIELD CHRONICLE</a>
+        <a href="oracle.html" class="nav-button"><i class="fa-solid fa-database fa-fw"></i> COMMAND ORACLE</a>
+        <a href="dispatch.html" class="nav-button"><i class="fa-solid fa-headset fa-fw"></i> DISPATCH INQUIRY</a>
+    </nav>
+    <div class="nav-overlay" id="nav-overlay"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="app-container">
+        <header class="header">
+            <h1>THE CHRONICLE</h1>
+            <p>Musings & Updates from the Field of Investigation</p>
+        </header>
+
+        <main class="entry-grid">
+
+            <section class="entry-card">
+              <h2>Entry #010</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-04-24</li>
+                <li><strong>Subject:</strong> Minarpara Mobile Minaret - Surveying the Shift</li>
+                <li><strong>Entry:</strong> The Minarpara mosque's minaret's 'nocturnal wanderings' are not entirely unfounded. Precise laser surveying reveals minute shifts. Geological instability and slow soil creep are the cause. Case resolved.</li>
+                <li><strong>Detective:</strong> Agent Fakhruddin</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Even the steadfast can be moved by unseen forces."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #009</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-04-17</li>
+                <li><strong>Subject:</strong> Anderkilla Weeping Well - Unearthing the Lament</li>
+                <li><strong>Entry:</strong> The weeping well of Anderkilla is indeed emanating sounds of distress. Seismic sensors detect vibrations from an underground water cavity releasing trapped air through narrow fissures. The 'phantom's lament' is the earth itself sighing.</li>
+                <li><strong>Detective:</strong> Agent Oli Ullah</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Earth's sorrow echoes in the quiet depths."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #008</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-04-10</li>
+                <li><strong>Subject:</strong> Polashpur Shadow Market - Exposing the Specters</li>
+                <li><strong>Entry:</strong> The spectral figures are an illusion. Hidden projectors cast pre-recorded shadow puppet shows onto screens at night. The 'shadow jinn' are a deliberate fabrication to deter competitors. Case resolved.</li>
+                <li><strong>Detective:</strong> Agent Moin Uddin</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Deception dances best in the dim light."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #007</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-04-03</li>
+                <li><strong>Subject:</strong> Shimultola Screaming Tree - Deciphering the Shrieks</li>
+                <li><strong>Entry:</strong> The screaming tree's sounds are produced by air forced through hollow branches by strong lunar-influenced winds, amplified by the tree's unique structure. The 'Rakshasa' is merely the wind.</li>
+                <li><strong>Detective:</strong> Agent Fakhruddin</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Wind's song can echo ancient fears."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #006</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-03-28</li>
+                <li><strong>Subject:</strong> Kumarpur Charpai - Unraveling the Curse</li>
+                <li><strong>Entry:</strong> The cursed charpai has yielded a mundane explanation. Analysis of the wood reveals traces of a rare, sleep-inducing fungus causing vivid nightmares and malaise. The charpai has been removed.</li>
+                <li><strong>Detective:</strong> Agent Oli Ullah</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "The unseen can terrify, even when earthly."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #005</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-03-22</li>
+                <li><strong>Subject:</strong> Joynagar Lake - Dhoar Paani Case - Insights</li>
+                <li><strong>Entry:</strong> The 'mirror spirit' of Dhoar Paani lake is tied to optical properties. High particulate matter in the mist causes significant light refraction, creating complex visual distortions misinterpreted as visions.</li>
+                <li><strong>Detective:</strong> Agent Moin Uddin</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Illusions fade when light reveals their source."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #004</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-03-18</li>
+                <li><strong>Subject:</strong> Bottola's Whispering Baobab - Acoustic Analysis</li>
+                <li><strong>Entry:</strong> The Baobab is producing anomalous sounds. Recordings reveal low-frequency murmurs. Investigating the tree's internal structure for cavities that could act as natural resonators.</li>
+                <li><strong>Detective:</strong> Agent Fakhruddin</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Nature speaks in tones we often misinterpret."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #003</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-03-12</li>
+                <li><strong>Subject:</strong> Temporal Shifts in Shonargaon - Preliminary Assessment</li>
+                <li><strong>Entry:</strong> Synchronized clock malfunctions confirmed. Chronometers are registering subtle but consistent fluctuations in time flow near the ruins. Focusing on environmental factors, particularly EM fields.</li>
+                <li><strong>Detective:</strong> Agent Oli Ullah</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Time's currents are felt, not always seen."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #002</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-03-05</li>
+                <li><strong>Subject:</strong> Amtali's Vanishing Footprints - Initial Findings</li>
+                <li><strong>Entry:</strong> Mystery of the vanishing footprints deepens. Tracks lead into the bamboo grove with no exit. The soil composition within the grove seems to absorb impressions. Ground penetrating radar will be deployed.</li>
+                <li><strong>Detective:</strong> Agent Moin Uddin</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "Earth remembers, even when surfaces forget."</span>
+            </section>
+
+            <section class="entry-card">
+              <h2>Entry #001</h2>
+              <ul class="entry-details">
+                <li><strong>Date:</strong> 2025-03-01</li>
+                <li><strong>Subject:</strong> The Koelpur Static Anomaly</li>
+                <li><strong>Entry:</strong> Commenced investigation. Reports of phantom radio static are persistent. Spectral analysis suggests anomalies beyond conventional radio waves. Further analysis is crucial to discern the source.</li>
+                <li><strong>Detective:</strong> Agent Fakhruddin</li>
+              </ul>
+              <span class="easter-egg">Hidden clue: "In static, voices may hide."</span>
+            </section>
+
+        </main>
+
+        <footer class="footer">
+            <p class="copyright-info"><i class="fa-regular fa-copyright"></i> 2025 THE ECTOPLASMIC INVESTIGATORS</p>
+            <p>SECRET LOGS AWAIT DISCOVERY</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // NAVIGATION SYSTEM LOGIC
+            const navToggle = document.getElementById('nav-toggle');
+            const navPanel = document.getElementById('main-navigation');
+            const navOverlay = document.getElementById('nav-overlay');
+            const toggleNav = () => {
+                const isNavOpen = document.body.classList.toggle('nav-open');
+                navToggle.setAttribute('aria-expanded', isNavOpen);
+                navPanel.setAttribute('aria-hidden', !isNavOpen);
+            };
+            navToggle.addEventListener('click', toggleNav);
+            navOverlay.addEventListener('click', toggleNav);
+
+            // Prevent navigation to current page
+            document.querySelectorAll('.nav-button.current-page').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+            });
+
+            // SIMULATED STATUS FOR NAV PANEL
+            const updateSystemOperationalStatus = () => {
+                const bdHour = new Date(new Date().getTime() + (36e5 * 6) + (new Date().getTimezoneOffset() * 6e4)).getHours();
+                const newStatus = (bdHour >= 1 && bdHour < 7) ? 'PASSIVE' : 'ACTIVE';
+                const statusEl = document.getElementById('system-operational-status');
+                if (statusEl && statusEl.textContent !== newStatus) {
+                    const indicatorEl = document.getElementById('status-indicator');
+                    statusEl.textContent = newStatus;
+                    indicatorEl.classList.toggle('status-active', newStatus === 'ACTIVE');
+                    indicatorEl.classList.toggle('status-passive', newStatus === 'PASSIVE');
+                }
+            };
+            updateSystemOperationalStatus();
+            setInterval(updateSystemOperationalStatus, 60000);
+
+            // Interactive Hidden Clue Logic
+            const clues = document.querySelectorAll('.easter-egg');
+            clues.forEach(clue => {
+                clue.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    clue.classList.toggle('is-revealed');
+                });
+            });
+        });
+    </script>
+    <script src="common.js"></script>
+</body>
+</html>

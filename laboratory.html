@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>THE LABORATORY - Classified Team Info</title>
+
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="common.css">
+
+    <style>
+
+        /*===============================================
+          1. ROOT & GLOBAL STYLES
+        =================================================*/
+        :root {
+            --primary-bg: #0d0d0d;
+            --secondary-bg: #1a1a1a;
+            --accent-color: #66eeff;
+            --accent-color-translucent: rgba(102, 238, 255, 0.05);
+            --text-color: #f0f0f0;
+            --border-color: #444;
+            --status-border-color: var(--accent-color);
+            --success-color: #00ff99;
+            --passive-color: #aaa;
+            --highlight-color: #ffcc66;
+            --nav-width: 300px;
+            --font-main: 'VT323', monospace;
+            --spacing-unit: 1rem;
+            --transition-speed-fast: 0.3s;
+            --transition-speed-slow: 0.4s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            scrollbar-width: none;
+        }
+
+        html::-webkit-scrollbar { display: none; }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+
+        /*===============================================
+          2. VISUAL EFFECTS (GRID, SCANLINES)
+        =================================================*/
+        .grid-overlay, .scanline-effect {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none; z-index: -10;
+        }
+        .grid-overlay {
+            background-image:
+                linear-gradient(90deg, var(--accent-color-translucent) 1px, transparent 1px),
+                linear-gradient(var(--accent-color-translucent) 1px, transparent 1px);
+            background-size: 25px 25px;
+        }
+        .scanline-effect {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            animation: scanline-animation 12s linear infinite;
+        }
+        @keyframes scanline-animation { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+        /*===============================================
+          3. NAVIGATION SYSTEM
+        =================================================*/
+        .nav-toggle-handle {
+            background: var(--secondary-bg);
+            border-bottom: 2px solid var(--accent-color);
+            padding: calc(var(--spacing-unit) * 0.75);
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--accent-color);
+            cursor: pointer;
+            position: sticky; top: 0;
+            z-index: 1000;
+            transition: color var(--transition-speed-fast) ease, background-color var(--transition-speed-fast) ease;
+        }
+        .nav-toggle-handle:hover { background-color: var(--accent-color); color: var(--primary-bg); }
+
+        .main-navigation {
+            position: fixed; top: 0; left: 0;
+            width: var(--nav-width); max-width: 90vw; height: 100vh;
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-unit);
+            z-index: 2000;
+            display: flex; flex-direction: column; gap: 0.5rem;
+            transform: translateX(-100%);
+            transition: transform var(--transition-speed-slow) ease-in-out;
+            overflow-y: auto;
+        }
+        .nav-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+            opacity: 0; pointer-events: none;
+            transition: opacity var(--transition-speed-slow) ease-in-out;
+        }
+        body.nav-open .main-navigation { transform: translateX(0); }
+        body.nav-open .nav-overlay { opacity: 1; pointer-events: auto; }
+        body.nav-open .app-container { transform: scale(0.98); filter: blur(3px) brightness(0.6); pointer-events: none; user-select: none; }
+        .nav-button {
+            display: flex; align-items: center; gap: 0.75rem; padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+            background: var(--primary-bg); border: 1px solid var(--border-color); color: var(--text-color); text-decoration: none; font-size: 1.1em;
+            transition: all var(--transition-speed-fast) ease;
+        }
+        .nav-button.current-page { background: var(--accent-color); color: var(--primary-bg); }
+        .nav-button .fa-fw { width: 20px; text-align: center; }
+        .status-panel { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--spacing-unit); padding: var(--spacing-unit); border: 2px solid var(--status-border-color); background: var(--primary-bg); font-size: 1.2em; text-align: center; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 8px; vertical-align: middle; }
+        .status-active { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); animation: blink-animation 1s step-end infinite; }
+        .status-passive { background-color: var(--passive-color); animation: none; }
+        @keyframes blink-animation { 50% { opacity: 0; } }
+
+        /*===============================================
+          4. LAYOUT & STRUCTURE
+        =================================================*/
+        .app-container {
+            padding: var(--spacing-unit);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-unit);
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fade-in 1s ease-out forwards;
+            transition: transform var(--transition-speed-slow) ease-in-out, filter var(--transition-speed-slow) ease-in-out;
+            transform-origin: center;
+        }
+        @keyframes fade-in { to { opacity: 1; } }
+
+        /*===============================================
+          5. HEADER & FOOTER
+        =================================================*/
+        .header, .footer { text-align: center; padding: calc(var(--spacing-unit) * 1.5) var(--spacing-unit); background: var(--secondary-bg); border: 1px solid var(--border-color); position: relative; overflow: hidden; opacity: 0; }
+        .header { transform: translateY(-100%); animation: slide-in-down 0.8s ease-out 0.2s forwards; }
+        .content-section { opacity: 1; /* animation: slide-in-up 0.8s ease-out 0.4s forwards; */ }
+        .footer { transform: translateY(100%); animation: slide-in-up 0.8s ease-out 0.6s forwards; }
+        @keyframes slide-in-down { to { transform: translateY(0); opacity: 1; } }
+        @keyframes slide-in-up { to { transform: translateY(0); opacity: 1; } }
+
+        .header::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent-color); animation: header-scan 2.5s linear infinite; }
+        @keyframes header-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .header h1 { font-size: clamp(2rem, 6vw, 2.5rem); margin-bottom: 0.25rem; font-weight: normal; }
+        .header p { font-size: clamp(1rem, 4vw, 1.2rem); color: var(--accent-color); }
+        .footer p { margin: 0.25rem 0; }
+        .footer .copyright-info { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+
+        /*===============================================
+          6. LABORATORY MEMBER GRID
+        =================================================*/
+        .content-section {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            padding: var(--spacing-unit);
+        }
+
+        .member-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-unit);
+        }
+
+        .member-card {
+            background: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            opacity: 0;
+        }
+
+        .member-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .member-card h2 {
+            font-size: 2em;
+            color: var(--accent-color);
+            font-weight: normal;
+        }
+
+        .member-details {
+            list-style-type: none;
+            padding: 0;
+            font-size: 1.2em;
+            text-align: left;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .member-details li {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            border-bottom: 1px dotted var(--border-color);
+            padding-bottom: 0.25rem;
+        }
+
+        .member-details li strong {
+            color: var(--accent-color);
+            font-weight: normal;
+            white-space: nowrap;
+        }
+
+        .member-details li span {
+            text-align: right;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="preloader"><div class="spinner"></div></div>
+    <div class="grid-overlay"></div>
+    <div class="scanline-effect"></div>
+
+    <!-- COMMAND NAVIGATION -->
+    <div class="nav-toggle-handle" id="nav-toggle" role="button" aria-expanded="false" aria-controls="main-navigation">
+        <i class="fa-solid fa-bars"></i> COMMAND NAVIGATION
+    </div>
+    <nav class="main-navigation" id="main-navigation" aria-hidden="true">
+        <div class="status-panel">
+            <span>STATUS: <span id="system-operational-status">ACTIVE</span><span class="status-indicator status-active" id="status-indicator"></span></span>
+        </div>
+        <a href="index.html" class="nav-button"><i class="fa-solid fa-desktop fa-fw"></i> COMMAND CENTER</a>
+        <a href="dossier.html" class="nav-button"><i class="fa-solid fa-address-card fa-fw"></i> THE DOSSIER</a>
+        <a href="laboratory.html" class="nav-button current-page"><i class="fa-solid fa-flask-vial fa-fw"></i> THE LABORATORY</a>
+        <a href="casefiles.html" class="nav-button"><i class="fa-solid fa-folder-open fa-fw"></i> CASE FILES</a>
+        <a href="evidence.html" class="nav-button"><i class="fa-solid fa-box-archive fa-fw"></i> EVIDENCE ARCHIVES</a>
+        <a href="chronicle.html" class="nav-button"><i class="fa-solid fa-book fa-fw"></i> FIELD CHRONICLE</a>
+        <a href="oracle.html" class="nav-button"><i class="fa-solid fa-database fa-fw"></i> COMMAND ORACLE</a>
+        <a href="dispatch.html" class="nav-button"><i class="fa-solid fa-headset fa-fw"></i> DISPATCH INQUIRY</a>
+    </nav>
+    <div class="nav-overlay" id="nav-overlay"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="app-container">
+        <header class="header">
+            <h1>THE LABORATORY</h1>
+            <p>CLASSIFIED TEAM INFO – ECTOPLASMIC INVESTIGATORS</p>
+        </header>
+
+        <main class="content-section">
+            <div class="member-grid">
+
+                <section class="member-card">
+                    <div class="member-header">
+                        <img class="profile-pic" src="images/Moin.png" alt="Moin Uddin">
+                        <h2>Moin Uddin</h2>
+                    </div>
+                    <ul class="member-details">
+                        <li><strong>Role:</strong><span>Lead Investigator</span></li>
+                        <li><strong>Expertise:</strong><span>Ectoplasmic Anomalies</span></li>
+                        <li><strong>Strength:</strong><span>Analytical & Fearless</span></li>
+                        <li><strong>Motto:</strong><span>"Uncovering secrets..."</span></li>
+                    </ul>
+                </section>
+
+                <section class="member-card">
+                    <div class="member-header">
+                        <img class="profile-pic" src="images/Atif.png" alt="Atif Ullah">
+                        <h2>Atif Ullah</h2>
+                    </div>
+                    <ul class="member-details">
+                        <li><strong>Role:</strong><span>Acoustics Specialist</span></li>
+                        <li><strong>Expertise:</strong><span>EVP Analysis</span></li>
+                        <li><strong>Strength:</strong><span>Auditory Perception</span></li>
+                        <li><strong>Motto:</strong><span>"The unseen speaks."</span></li>
+                    </ul>
+                </section>
+
+                <section class="member-card">
+                    <div class="member-header">
+                        <img class="profile-pic" src="images/Fakhruddin.png" alt="Fakhruddin">
+                        <h2>Fakhruddin</h2>
+                    </div>
+                    <ul class="member-details">
+                        <li><strong>Role:</strong><span>Tech Specialist</span></li>
+                        <li><strong>Expertise:</strong><span>Data Decryption</span></li>
+                        <li><strong>Strength:</strong><span>Methodical Analysis</span></li>
+                        <li><strong>Motto:</strong><span>"Every byte is a clue."</span></li>
+                    </ul>
+                </section>
+
+                <section class="member-card">
+                    <div class="member-header">
+                        <img class="profile-pic" src="images/Oli.png" alt="Oli Ullah">
+                        <h2>Oli Ullah</h2>
+                    </div>
+                    <ul class="member-details">
+                        <li><strong>Role:</strong><span>Field Operative</span></li>
+                        <li><strong>Expertise:</strong><span>Artistic Documentation</span></li>
+                        <li><strong>Strength:</strong><span>Intuitive Perspective</span></li>
+                        <li><strong>Motto:</strong><span>"Seeing with creativity."</span></li>
+                    </ul>
+                </section>
+
+                <section class="member-card">
+                    <div class="member-header">
+                        <img class="profile-pic" src="images/Nasir.png" alt="Nasir Uddin">
+                        <h2>Nasir Uddin</h2>
+                    </div>
+                    <ul class="member-details">
+                        <li><strong>Role:</strong><span>Medical Expert</span></li>
+                        <li><strong>Expertise:</strong><span>Anomalous Biology</span></li>
+                        <li><strong>Strength:</strong><span>Calm & Precise</span></li>
+                        <li><strong>Motto:</strong><span>"Response to the unknown."</span></li>
+                    </ul>
+                </section>
+
+                <section class="member-card">
+                    <div class="member-header">
+                        <img class="profile-pic" src="images/Faisal.png" alt="Faisal">
+                        <h2>Faisal</h2>
+                    </div>
+                    <ul class="member-details">
+                        <li><strong>Role:</strong><span>Village Intelligence Specialist</span></li>
+                        <li><strong>Expertise:</strong><span>In-depth knowledge of rural environments</span></li>
+                        <li><strong>Strength:</strong><span>Brave & Devoted</span></li>
+                        <li><strong>Motto:</strong><span>"Every village tells a story..."</span></li>
+                    </ul>
+                </section>
+
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p class="copyright-info"><i class="fa-regular fa-copyright"></i> 2025 THE ECTOPLASMIC INVESTIGATORS</p>
+            <p>SECRET LOGS AWAIT DISCOVERY</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            //===============================================
+            // NAVIGATION SYSTEM LOGIC
+            //===============================================
+            const navToggle = document.getElementById('nav-toggle');
+            const navPanel = document.getElementById('main-navigation');
+            const navOverlay = document.getElementById('nav-overlay');
+            const toggleNav = () => {
+                const isNavOpen = document.body.classList.toggle('nav-open');
+                navToggle.setAttribute('aria-expanded', isNavOpen);
+                navPanel.setAttribute('aria-hidden', !isNavOpen);
+            };
+            navToggle.addEventListener('click', toggleNav);
+            navOverlay.addEventListener('click', toggleNav);
+
+            // Prevent navigation to current page
+            document.querySelectorAll('.nav-button.current-page').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+            });
+
+            // SIMULATED STATUS FOR NAV PANEL
+            const updateSystemOperationalStatus = () => {
+                const bdHour = new Date(new Date().getTime() + (36e5 * 6) + (new Date().getTimezoneOffset() * 6e4)).getHours();
+                const newStatus = (bdHour >= 1 && bdHour < 7) ? 'PASSIVE' : 'ACTIVE';
+                const statusEl = document.getElementById('system-operational-status');
+                if (statusEl && statusEl.textContent !== newStatus) {
+                    const indicatorEl = document.getElementById('status-indicator');
+                    statusEl.textContent = newStatus;
+                    indicatorEl.classList.toggle('status-active', newStatus === 'ACTIVE');
+                    indicatorEl.classList.toggle('status-passive', newStatus === 'PASSIVE');
+                }
+            };
+            updateSystemOperationalStatus();
+            setInterval(updateSystemOperationalStatus, 60000);
+        });
+    </script>
+    <script src="common.js"></script>
+</body>
+</html>

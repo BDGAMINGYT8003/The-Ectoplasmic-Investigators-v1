@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>THE DOSSIER - Unclassified</title>
+
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="common.css">
+
+    <style>
+
+        /*===============================================
+          1. ROOT & GLOBAL STYLES
+        =================================================*/
+        :root {
+            --primary-bg: #0d0d0d;
+            --secondary-bg: #1a1a1a;
+            --accent-color: #66eeff;
+            --accent-color-translucent: rgba(102, 238, 255, 0.05);
+            --text-color: #f0f0f0;
+            --border-color: #444;
+            --status-border-color: var(--accent-color);
+            --success-color: #00ff99;
+            --passive-color: #aaa;
+            --highlight-color: #ffcc66;
+            --nav-width: 300px;
+            --font-main: 'VT323', monospace;
+            --spacing-unit: 1rem;
+            --transition-speed-fast: 0.3s;
+            --transition-speed-slow: 0.4s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            scrollbar-width: none;
+        }
+
+        html::-webkit-scrollbar { display: none; }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            font-size: 16px;
+            /* === FIX: Restored centering and default scroll lock === */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Unscrollable by default */
+            padding: var(--spacing-unit);
+        }
+
+        /* === FIX: Class to enable scrolling when accordion is open === */
+        body.scroll-enabled {
+            overflow-y: auto;
+            justify-content: flex-start; /* Align content to top when scrolling */
+        }
+
+        /*===============================================
+          2. VISUAL EFFECTS (GRID, SCANLINES)
+        =================================================*/
+        .grid-overlay, .scanline-effect {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none; z-index: -10;
+        }
+        .grid-overlay {
+            background-image:
+                linear-gradient(90deg, var(--accent-color-translucent) 1px, transparent 1px),
+                linear-gradient(var(--accent-color-translucent) 1px, transparent 1px);
+            background-size: 25px 25px;
+        }
+        .scanline-effect {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            animation: scanline-animation 12s linear infinite;
+        }
+        @keyframes scanline-animation { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+        /*===============================================
+          3. NAVIGATION SYSTEM
+        =================================================*/
+        .nav-toggle-handle {
+            background: var(--secondary-bg);
+            border-bottom: 2px solid var(--accent-color);
+            padding: calc(var(--spacing-unit) * 0.75);
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--accent-color);
+            cursor: pointer;
+            position: fixed; /* Changed to fixed to stay on top */
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            transition: color var(--transition-speed-fast) ease, background-color var(--transition-speed-fast) ease;
+        }
+        .nav-toggle-handle:hover { background-color: var(--accent-color); color: var(--primary-bg); }
+
+        .main-navigation {
+            position: fixed; top: 0; left: 0;
+            width: var(--nav-width); max-width: 90vw; height: 100vh;
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-unit);
+            z-index: 2000;
+            display: flex; flex-direction: column; gap: 0.5rem;
+            transform: translateX(-100%);
+            transition: transform var(--transition-speed-slow) ease-in-out;
+            overflow-y: auto;
+        }
+        .nav-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+            opacity: 0; pointer-events: none;
+            transition: opacity var(--transition-speed-slow) ease-in-out;
+        }
+        body.nav-open .main-navigation { transform: translateX(0); }
+        body.nav-open .nav-overlay { opacity: 1; pointer-events: auto; }
+        body.nav-open .app-container { transform: scale(0.98); filter: blur(3px) brightness(0.6); pointer-events: none; user-select: none; }
+        .nav-button {
+            display: flex; align-items: center; gap: 0.75rem; padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+            background: var(--primary-bg); border: 1px solid var(--border-color); color: var(--text-color); text-decoration: none; font-size: 1.1em;
+            transition: all var(--transition-speed-fast) ease;
+        }
+        .nav-button.current-page { background: var(--accent-color); color: var(--primary-bg); }
+        .nav-button .fa-fw { width: 20px; text-align: center; }
+        .status-panel { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--spacing-unit); padding: var(--spacing-unit); border: 2px solid var(--status-border-color); background: var(--primary-bg); font-size: 1.2em; text-align: center; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 8px; vertical-align: middle; }
+        .status-active { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); animation: blink-animation 1s step-end infinite; }
+        .status-passive { background-color: var(--passive-color); animation: none; }
+        @keyframes blink-animation { 50% { opacity: 0; } }
+
+        /*===============================================
+          4. LAYOUT & STRUCTURE
+        =================================================*/
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-unit);
+            width: 100%;
+            max-width: 900px;
+            opacity: 0;
+            animation: fade-in 1s ease-out forwards;
+            transition: transform var(--transition-speed-slow) ease-in-out, filter var(--transition-speed-slow) ease-in-out;
+            transform-origin: center;
+            margin-top: 60px; /* Space for the fixed nav handle */
+            margin-bottom: var(--spacing-unit);
+        }
+        @keyframes fade-in { to { opacity: 1; } }
+
+        /*===============================================
+          5. HEADER & FOOTER
+        =================================================*/
+        .header, .footer { text-align: center; padding: calc(var(--spacing-unit) * 1.5) var(--spacing-unit); background: var(--secondary-bg); border: 1px solid var(--border-color); position: relative; overflow: hidden; opacity: 0; }
+        .header { transform: translateY(-100%); animation: slide-in-down 0.8s ease-out 0.2s forwards; }
+        .content-section { opacity: 1; /* animation: slide-in-up 0.8s ease-out 0.4s forwards; */ }
+        .footer { transform: translateY(100%); animation: slide-in-up 0.8s ease-out 0.6s forwards; }
+        @keyframes slide-in-down { to { transform: translateY(0); opacity: 1; } }
+        @keyframes slide-in-up { to { transform: translateY(0); opacity: 1; } }
+
+        .header::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent-color); animation: header-scan 2.5s linear infinite; }
+        @keyframes header-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .header h1 { font-size: clamp(2rem, 6vw, 2.5rem); margin-bottom: 0.25rem; font-weight: normal; }
+        .header p { font-size: clamp(1rem, 4vw, 1.2rem); color: var(--accent-color); }
+        .footer p { margin: 0.25rem 0; }
+        .footer .copyright-info { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+
+        /*===============================================
+          6. DOSSIER ACCORDION
+        =================================================*/
+        .content-section { background: var(--secondary-bg); border: 1px solid var(--border-color); padding: var(--spacing-unit); }
+        .dossier-section { border-bottom: 1px solid var(--border-color); opacity: 0; }
+        .dossier-section:last-child { border-bottom: none; }
+        .section-title { font-size: clamp(1.5rem, 5vw, 2rem); color: var(--accent-color); padding: var(--spacing-unit); width: 100%; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; background: none; border: none; text-align: left; }
+        .section-title .caret { transition: transform var(--transition-speed-fast) ease; }
+        .section-content-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--transition-speed-slow) ease-in-out; }
+        .section-content { overflow: hidden; font-size: 1.2em; line-height: 1.6; }
+        .section-content-inner { background: var(--primary-bg); border: 1px solid var(--border-color); padding: 1.5rem; margin-bottom: var(--spacing-unit); }
+        .dossier-section.is-open .section-content-wrapper { grid-template-rows: 1fr; }
+        .dossier-section.is-open .section-title .caret { transform: rotate(90deg); }
+        .section-content ul { list-style-type: none; padding-left: 0; margin-top: var(--spacing-unit); }
+        .section-content ul li { margin-bottom: 1rem; padding-left: 1.5rem; position: relative; }
+        .section-content ul li::before { content: '►'; color: var(--accent-color); position: absolute; left: 0; top: 2px; }
+        .section-content ul li strong { color: var(--highlight-color); font-weight: normal; }
+    </style>
+</head>
+
+<body>
+    <div class="preloader"><div class="spinner"></div></div>
+    <div class="grid-overlay"></div>
+    <div class="scanline-effect"></div>
+
+    <div class="nav-toggle-handle" id="nav-toggle" role="button" aria-expanded="false" aria-controls="main-navigation">
+        <i class="fa-solid fa-bars"></i> COMMAND NAVIGATION
+    </div>
+    <nav class="main-navigation" id="main-navigation" aria-hidden="true">
+        <div class="status-panel">
+            <span>STATUS: <span id="system-operational-status">ACTIVE</span><span class="status-indicator status-active" id="status-indicator"></span></span>
+        </div>
+        <a href="index.html" class="nav-button"><i class="fa-solid fa-desktop fa-fw"></i> COMMAND CENTER</a>
+        <a href="dossier.html" class="nav-button current-page"><i class="fa-solid fa-address-card fa-fw"></i> THE DOSSIER</a>
+        <a href="laboratory.html" class="nav-button"><i class="fa-solid fa-flask-vial fa-fw"></i> THE LABORATORY</a>
+        <a href="casefiles.html" class="nav-button"><i class="fa-solid fa-folder-open fa-fw"></i> CASE FILES</a>
+        <a href="evidence.html" class="nav-button"><i class="fa-solid fa-box-archive fa-fw"></i> EVIDENCE ARCHIVES</a>
+        <a href="chronicle.html" class="nav-button"><i class="fa-solid fa-book fa-fw"></i> FIELD CHRONICLE</a>
+        <a href="oracle.html" class="nav-button"><i class="fa-solid fa-database fa-fw"></i> COMMAND ORACLE</a>
+        <a href="dispatch.html" class="nav-button"><i class="fa-solid fa-headset fa-fw"></i> DISPATCH INQUIRY</a>
+    </nav>
+    <div class="nav-overlay" id="nav-overlay"></div>
+
+    <div class="app-container">
+        <header class="header">
+            <h1>THE DOSSIER</h1>
+            <p>ABOUT US</p>
+        </header>
+
+        <main class="content-section">
+            <article class="dossier-section">
+                <button class="section-title" aria-expanded="false" aria-controls="bio-content"><span class="caret">►</span> BIOGRAPHY</button>
+                <div class="section-content-wrapper" id="bio-content">
+                    <div class="section-content">
+                        <div class="section-content-inner">
+                            <p>We are The Ectoplasmic Investigators, a team of five cousin brothers driven by a shared fascination with the paranormal that plagues rural Bangladesh. What began as a youthful curiosity and hobby has evolved into a dedicated pursuit of understanding and confronting the unseen forces that disrupt our world. We operate with a profound belief in the paranormal, recognizing it not as folklore, but as a tangible reality orchestrated by entities beyond our ordinary perception. Our investigations are rooted in the conviction that these disturbances are not random, but are deliberate actions from the realm of jinn, masterminds behind the enigmatic events we unravel.</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="dossier-section">
+                <button class="section-title" aria-expanded="false" aria-controls="abilities-content"><span class="caret">►</span> SKILLS</button>
+                <div class="section-content-wrapper" id="abilities-content">
+                    <div class="section-content">
+                        <div class="section-content-inner">
+                            <p>Our expertise lies in the specialized art of paranormal investigation... Our skills encompass:</p>
+                            <ul>
+                                <li><strong>Cultural Acumen:</strong> We are intimately familiar with the cultural landscape of rural Bangladesh...</li>
+                                <li><strong>Analytical Investigation:</strong> We employ rigorous investigative techniques to dissect paranormal cases...</li>
+                                <li><strong>Advanced Equipment Operation:</strong> We are proficient in utilizing a range of specialized equipment...</li>
+                                <li><strong>Risk Management & Safety Protocols:</strong> Given the inherent unpredictability of paranormal encounters...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="dossier-section">
+                <button class="section-title" aria-expanded="false" aria-controls="history-content"><span class="caret">►</span> PROFESSIONAL BACKGROUND</button>
+                <div class="section-content-wrapper" id="history-content">
+                    <div class="section-content">
+                        <div class="section-content-inner">
+                            <p>Though our origins are rooted in a shared personal interest, The Ectoplasmic Investigators operate with unwavering professionalism... Our dedication is to the truth of the paranormal, and to assisting those affected by its manifestations.</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </main>
+
+        <footer class="footer">
+            <p class="copyright-info"><i class="fa-regular fa-copyright"></i> 2025 THE ECTOPLASMIC INVESTIGATORS</p>
+            <p>SECRET LOGS AWAIT DISCOVERY</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            //===============================================
+            // 1. NAVIGATION SYSTEM LOGIC
+            //===============================================
+            const navToggle = document.getElementById('nav-toggle');
+            const navPanel = document.getElementById('main-navigation');
+            const navOverlay = document.getElementById('nav-overlay');
+            const toggleNav = () => {
+                const isNavOpen = document.body.classList.toggle('nav-open');
+                navToggle.setAttribute('aria-expanded', isNavOpen);
+                navPanel.setAttribute('aria-hidden', !isNavOpen);
+            };
+            navToggle.addEventListener('click', toggleNav);
+            navOverlay.addEventListener('click', toggleNav);
+
+            // Prevent navigation to current page
+            document.querySelectorAll('.nav-button.current-page').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+            });
+
+            const updateSystemOperationalStatus = () => {
+                const bdHour = new Date(new Date().getTime() + (36e5 * 6) + (new Date().getTimezoneOffset() * 6e4)).getHours();
+                const newStatus = (bdHour >= 1 && bdHour < 7) ? 'PASSIVE' : 'ACTIVE';
+                const statusEl = document.getElementById('system-operational-status');
+                if (statusEl && statusEl.textContent !== newStatus) {
+                    const indicatorEl = document.getElementById('status-indicator');
+                    statusEl.textContent = newStatus;
+                    indicatorEl.classList.toggle('status-active', newStatus === 'ACTIVE');
+                    indicatorEl.classList.toggle('status-passive', newStatus === 'PASSIVE');
+                }
+            };
+            updateSystemOperationalStatus();
+            setInterval(updateSystemOperationalStatus, 60000);
+
+            //===============================================
+            // 2. DOSSIER ACCORDION & SCROLL LOGIC
+            //===============================================
+            const accordionSections = document.querySelectorAll('.dossier-section');
+
+            // === FIX: Function to manage scrolling and centering ===
+            const updateScrollState = () => {
+                const isAnySectionOpen = document.querySelector('.dossier-section.is-open') !== null;
+                document.body.classList.toggle('scroll-enabled', isAnySectionOpen);
+            };
+
+            accordionSections.forEach(section => {
+                const button = section.querySelector('.section-title');
+                button.addEventListener('click', () => {
+                    const isOpening = !section.classList.contains('is-open');
+
+                    // Close all other sections
+                    accordionSections.forEach(otherSection => {
+                        otherSection.classList.remove('is-open');
+                        otherSection.querySelector('.section-title').setAttribute('aria-expanded', 'false');
+                    });
+
+                    // Open the clicked section if it wasn't already open
+                    if (isOpening) {
+                        section.classList.add('is-open');
+                        button.setAttribute('aria-expanded', 'true');
+                    }
+
+                    // Update the body's scroll state after any change
+                    updateScrollState();
+                });
+            });
+
+            // Set initial state on load
+            updateScrollState();
+        });
+    </script>
+    <script src="common.js"></script>
+</body>
+</html>

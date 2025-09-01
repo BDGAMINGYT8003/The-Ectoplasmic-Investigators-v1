@@ -1,16 +1,449 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>replit</title>
-  <link href="style.css" rel="stylesheet" type="text/css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Ectoplasmic Investigators - Command Center</title>
+
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="common.css">
+
+    <style>
+        /*===============================================
+          1. ROOT & GLOBAL STYLES
+        =================================================*/
+        :root {
+            --primary-bg: #0d0d0d;
+            --secondary-bg: #1a1a1a;
+            --accent-color: #66eeff;
+            --accent-color-translucent: rgba(102, 238, 255, 0.05);
+            --text-color: #f0f0f0;
+            --border-color: #444;
+            --status-border-color: var(--accent-color);
+            --success-color: #00ff99;
+            --passive-color: #aaa;
+            --nav-width: 300px;
+            --font-main: 'VT323', monospace;
+            --spacing-unit: 1rem;
+            --transition-speed-fast: 0.3s;
+            --transition-speed-slow: 0.4s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            scrollbar-width: none;
+        }
+
+        html::-webkit-scrollbar { display: none; }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            min-height: 100vh;
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+
+        /*===============================================
+          2. VISUAL EFFECTS (GRID, SCANLINES)
+        =================================================*/
+        .grid-overlay, .scanline-effect {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: -10;
+        }
+
+        .grid-overlay {
+            background-image:
+                linear-gradient(90deg, var(--accent-color-translucent) 1px, transparent 1px),
+                linear-gradient(var(--accent-color-translucent) 1px, transparent 1px);
+            background-size: 25px 25px;
+        }
+
+        .scanline-effect {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            animation: scanline-animation 12s linear infinite;
+        }
+
+        @keyframes scanline-animation { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+        /*===============================================
+          3. NAVIGATION SYSTEM
+        =================================================*/
+        .nav-toggle-handle {
+            background: var(--secondary-bg);
+            border-bottom: 2px solid var(--accent-color);
+            padding: calc(var(--spacing-unit) * 0.75);
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--accent-color);
+            cursor: pointer;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: color var(--transition-speed-fast) ease, background-color var(--transition-speed-fast) ease;
+        }
+
+        .nav-toggle-handle:hover { background-color: var(--accent-color); color: var(--primary-bg); }
+
+        .main-navigation {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--nav-width);
+            max-width: 90vw;
+            height: 100vh;
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-unit);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transform: translateX(-100%);
+            transition: transform var(--transition-speed-slow) ease-in-out;
+            overflow-y: auto;
+        }
+
+        .nav-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed-slow) ease-in-out;
+        }
+
+        /* State when navigation is OPEN */
+        body.nav-open .main-navigation { transform: translateX(0); }
+        body.nav-open .nav-overlay { opacity: 1; pointer-events: auto; }
+        body.nav-open .app-container {
+            transform: scale(0.98);
+            filter: blur(3px) brightness(0.6);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /*===============================================
+          4. LAYOUT & STRUCTURE
+        =================================================*/
+        .app-container {
+            padding: var(--spacing-unit);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-unit);
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fade-in 1s ease-out forwards;
+            transition: transform var(--transition-speed-slow) ease-in-out, filter var(--transition-speed-slow) ease-in-out;
+            transform-origin: center;
+        }
+
+        @keyframes fade-in { to { opacity: 1; } }
+
+        /*===============================================
+          5. HEADER, MAIN, & FOOTER
+        =================================================*/
+        .header, .footer { opacity: 0; }
+        .main-content { opacity: 1; }
+        .header { transform: translateY(-100%); animation: slide-in-down 0.8s ease-out 0.2s forwards; }
+        .footer { transform: translateY(100%); animation: slide-in-up 0.8s ease-out 0.6s forwards; }
+        @keyframes slide-in-down { to { transform: translateY(0); opacity: 1; } }
+        @keyframes slide-in-up { to { transform: translateY(0); opacity: 1; } }
+
+        .header, .footer { text-align: center; padding: calc(var(--spacing-unit) * 1.5) var(--spacing-unit); background: var(--secondary-bg); border: 1px solid var(--border-color); position: relative; overflow: hidden; }
+        .header::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent-color); animation: header-scan 2.5s linear infinite; }
+        @keyframes header-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .header h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); margin-bottom: 0.25rem; font-weight: normal; }
+        .header p { font-size: clamp(1rem, 3vw, 1.2rem); color: var(--accent-color); }
+        .footer p { margin: 0.25rem 0; }
+        .footer .copyright-info { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+
+        /*===============================================
+          6. NAVIGATION BUTTONS (INSIDE PANEL)
+        =================================================*/
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
+            background: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: all var(--transition-speed-fast) ease;
+        }
+        .nav-button:hover, .nav-button:focus { background: var(--accent-color); color: var(--primary-bg); transform: translateX(5px); outline: none; }
+        .nav-button.current-page { background: var(--accent-color); color: var(--primary-bg); }
+        .nav-button.current-page:hover { transform: none; cursor: default; }
+        .nav-button .fa-fw { width: 20px; text-align: center; }
+
+        /*===============================================
+          7. MAIN CONTENT & DATA GRID
+        =================================================*/
+        .main-content { background: var(--secondary-bg); border: 1px solid var(--border-color); padding: var(--spacing-unit); display: flex; flex-direction: column; gap: var(--spacing-unit); }
+        .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-unit); }
+        .data-card { background: var(--primary-bg); border: 1px solid var(--border-color); border-left: 4px solid var(--border-color); padding: calc(var(--spacing-unit) * 1.5); transition: border-left-color var(--transition-speed-fast) ease; }
+        .data-card:hover { border-left-color: var(--accent-color); }
+        .data-card h3 { font-size: 1.3em; margin-bottom: var(--spacing-unit); color: var(--accent-color); display: flex; align-items: center; gap: 0.75rem; }
+        .data-row { font-size: 1.2em; margin: 0.5rem 0 0.5rem 1.75rem; display: flex; justify-content: space-between; align-items: baseline; }
+        .value-unit-group { display: flex; justify-content: flex-end; align-items: baseline; gap: 0.5ch; }
+        .value-unit-group > span:first-child { min-width: 3ch; text-align: right; display: inline-block; }
+
+        /*===============================================
+          8. STATUS PANELS & INDICATORS
+        =================================================*/
+        .status-panel { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--spacing-unit); padding: var(--spacing-unit); border: 2px solid var(--status-border-color); background: var(--primary-bg); font-size: 1.2em; text-align: center; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 8px; vertical-align: middle; }
+        .status-active { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); animation: blink-animation 1s step-end infinite; }
+        .status-passive { background-color: var(--passive-color); animation: none; }
+        @keyframes blink-animation { 50% { opacity: 0; } }
+        .value-change { animation: value-update-animation 0.5s ease-in-out; }
+        @keyframes value-update-animation { 0% { color: var(--accent-color); transform: scale(1.2); } 100% { color: var(--text-color); transform: scale(1); } }
+    </style>
 </head>
 
 <body>
-  Hello world
-  <script src="script.js"></script>
-</body>
+    <div class="preloader"><div class="spinner"></div></div>
+    <div class="grid-overlay"></div>
+    <div class="scanline-effect"></div>
 
+    <div class="nav-toggle-handle" id="nav-toggle" role="button" aria-expanded="false" aria-controls="main-navigation">
+        <i class="fa-solid fa-bars"></i> COMMAND NAVIGATION
+    </div>
+
+    <nav class="main-navigation" id="main-navigation" aria-hidden="true">
+        <div class="status-panel">
+            <span>STATUS: <span id="system-operational-status">ACTIVE</span><span class="status-indicator status-active" id="status-indicator"></span></span>
+        </div>
+        <a href="index.html" class="nav-button current-page"><i class="fa-solid fa-desktop fa-fw"></i> COMMAND CENTER</a>
+        <a href="dossier.html" class="nav-button"><i class="fa-solid fa-address-card fa-fw"></i> THE DOSSIER</a>
+        <a href="laboratory.html" class="nav-button"><i class="fa-solid fa-flask-vial fa-fw"></i> THE LABORATORY</a>
+        <a href="casefiles.html" class="nav-button"><i class="fa-solid fa-folder-open fa-fw"></i> CASE FILES</a>
+        <a href="evidence.html" class="nav-button"><i class="fa-solid fa-box-archive fa-fw"></i> EVIDENCE ARCHIVES</a>
+        <a href="chronicle.html" class="nav-button"><i class="fa-solid fa-book fa-fw"></i> FIELD CHRONICLE</a>
+        <a href="oracle.html" class="nav-button"><i class="fa-solid fa-database fa-fw"></i> COMMAND ORACLE</a>
+        <a href="dispatch.html" class="nav-button"><i class="fa-solid fa-headset fa-fw"></i> DISPATCH INQUIRY</a>
+    </nav>
+    <div class="nav-overlay" id="nav-overlay"></div>
+
+    <div class="app-container">
+        <header class="header">
+            <h1>THE ECTOPLASMIC INVESTIGATORS</h1>
+            <p>COMMAND CENTER • CLEARANCE LEVEL ALPHA</p>
+        </header>
+
+        <main class="main-content">
+            <div class="status-panel">
+                <span>SYSTEM: <span id="system-status">OPERATIONAL</span></span>
+                <span>PRESENCE: <span id="uptime">00:00:00</span></span>
+            </div>
+
+            <div class="data-grid">
+                <div class="data-card">
+                    <h3><i class="fa-solid fa-briefcase fa-fw"></i> ACTIVE INVESTIGATIONS</h3>
+                    <div class="data-row"><span>Current Cases:</span> <span id="current-cases">0</span></div>
+                    <div class="data-row"><span>Priority Alerts:</span> <span id="priority-alerts">0</span></div>
+                </div>
+                <div class="data-card">
+                    <h3><i class="fa-solid fa-user-secret fa-fw"></i> FIELD AGENTS</h3>
+                    <div class="data-row"><span>Total Agents:</span> <span id="total-agents">5</span></div>
+                    <div class="data-row"><span>Agents Deployed:</span> <span id="deployed-agents">0</span></div>
+                </div>
+                <div class="data-card">
+                    <h3><i class="fa-solid fa-wave-square fa-fw"></i> ANOMALY READINGS</h3>
+                    <div class="data-row"><span>Level:</span> <span id="anomaly-level">ANALYZING...</span></div>
+                    <div class="data-row"><span>Trending:</span> <span id="anomaly-trend">--</span></div>
+                </div>
+                <div class="data-card">
+                    <h3><i class="fa-solid fa-microchip fa-fw"></i> EQUIPMENT STATUS</h3>
+                    <div class="data-row"><span>Systems:</span> <span id="system-condition">ANALYZING...</span></div>
+                    <div class="data-row">
+                        <span>Maintenance:</span>
+                        <div class="value-unit-group">
+                            <span id="maintenance-level">0</span>
+                            <span>%</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- NEW DATA CARD 1 -->
+                <div class="data-card">
+                    <h3><i class="fa-solid fa-shield-halved fa-fw"></i> CONTAINMENT STATUS</h3>
+                    <div class="data-row"><span>Field Integrity:</span>
+                        <div class="value-unit-group">
+                             <span id="containment-integrity">ANALYZING...</span>
+                             <span>%</span>
+                        </div>
+                    </div>
+                    <div class="data-row"><span>Entity Count:</span> <span id="entity-count">0</span></div>
+                </div>
+                <!-- NEW DATA CARD 2 -->
+                <div class="data-card">
+                    <h3><i class="fa-solid fa-tower-broadcast fa-fw"></i> P.K.E. ACTIVITY</h3>
+                    <div class="data-row"><span>Ambient Level:</span> <span id="pke-level">ANALYZING...</span></div>
+                    <div class="data-row"><span>Surge Detected:</span> <span id="surge-status">--</span></div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p class="copyright-info">
+                <i class="fa-regular fa-copyright"></i> 2025 THE ECTOPLASMIC INVESTIGATORS
+            </p>
+            <p>SECRET LOGS AWAIT DISCOVERY</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            //===============================================
+            // 1. NAVIGATION SYSTEM LOGIC
+            //===============================================
+            const navToggle = document.getElementById('nav-toggle');
+            const navPanel = document.getElementById('main-navigation');
+            const navOverlay = document.getElementById('nav-overlay');
+            const toggleNav = () => {
+                const isNavOpen = document.body.classList.toggle('nav-open');
+                navToggle.setAttribute('aria-expanded', isNavOpen);
+                navPanel.setAttribute('aria-hidden', !isNavOpen);
+            };
+            navToggle.addEventListener('click', toggleNav);
+            navOverlay.addEventListener('click', toggleNav);
+
+            // Prevent navigation to current page
+            document.querySelectorAll('.nav-button.current-page').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+            });
+
+            //===============================================
+            // 2. STATE & CONSTANTS
+            //===============================================
+            const startTime = new Date();
+            const bangladeshiTimeOffset = 6;
+            const totalAgents = 5; // UPDATED AGENT COUNT
+
+            //===============================================
+            // 3. UTILITY FUNCTIONS
+            //===============================================
+            const getBangladeshiTime = () => new Date(new Date().getTime() + (new Date().getTimezoneOffset() * 60000) + (3600000 * bangladeshiTimeOffset));
+            const formatDuration = (ms) => {
+                const s = Math.floor(ms / 1000);
+                return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+            };
+            const updateValue = (id, val) => {
+                const el = document.getElementById(id);
+                if (el && el.textContent !== String(val)) {
+                    el.textContent = String(val);
+                    el.classList.remove('value-change');
+                    void el.offsetWidth;
+                    el.classList.add('value-change');
+                }
+            };
+            const seededRandom = (seed) => (Math.sin(seed) * 10000) - Math.floor(Math.sin(seed) * 10000);
+            const getWeekNumber = (d) => {
+                d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+                return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 864e5) + 1) / 7);
+            };
+
+            //===============================================
+            // 4. DYNAMIC DATA UPDATE LOGIC
+            //===============================================
+            const updateUptime = () => document.getElementById('uptime').textContent = formatDuration(new Date() - startTime);
+
+            const updateSystemOperationalStatus = () => {
+                const newStatus = (getBangladeshiTime().getHours() >= 1 && getBangladeshiTime().getHours() < 7) ? 'PASSIVE' : 'ACTIVE';
+                const statusEl = document.getElementById('system-operational-status');
+                if (statusEl.textContent !== newStatus) {
+                    const indicatorEl = document.getElementById('status-indicator');
+                    statusEl.textContent = newStatus;
+                    indicatorEl.classList.toggle('status-active', newStatus === 'ACTIVE');
+                    indicatorEl.classList.toggle('status-passive', newStatus === 'PASSIVE');
+                    if (newStatus === 'PASSIVE') updateDeployedAgents();
+                }
+            };
+
+            const updateDeployedAgents = () => {
+                if (document.getElementById('system-operational-status').textContent === 'PASSIVE') {
+                    updateValue('deployed-agents', 0);
+                    return;
+                }
+                const bdTime = getBangladeshiTime();
+                const seed = bdTime.getFullYear() + getWeekNumber(bdTime) + bdTime.getDay() + bdTime.getHours();
+                const deployed = Math.floor(seededRandom(seed) * totalAgents) + 1; // UPDATED to use totalAgents
+                updateValue('deployed-agents', deployed);
+            };
+
+            const performDailyUpdates = () => {
+                const bdTime = getBangladeshiTime();
+                const seed = bdTime.getDate() + (bdTime.getMonth() * 31) + (bdTime.getFullYear() * 365);
+
+                updateValue('current-cases', Math.floor(seededRandom(seed) * 4) + 2);
+                updateValue('priority-alerts', Math.floor(seededRandom(seed) * 3) + 1);
+
+                const anomalyLevels = ['LOW', 'MODERATE', 'HIGH', 'SEVERE'], trends = ['▼ DOWN', '► STABLE', '▲ UP'];
+                updateValue('anomaly-level', anomalyLevels[Math.floor(seededRandom(seed + 1000) * anomalyLevels.length)]);
+                updateValue('anomaly-trend', trends[Math.floor(seededRandom(seed + 1000) * trends.length)]);
+
+                const conditions = ['NOMINAL', 'OPTIMAL', 'STABLE'];
+                updateValue('system-condition', conditions[Math.floor(seededRandom(seed + 2000) * conditions.length)]);
+                updateValue('maintenance-level', Math.floor(seededRandom(seed + 2000) * 15) + 86);
+
+                // SIMULATE NEW DATA
+                updateValue('containment-integrity', Math.floor(seededRandom(seed + 3000) * 6) + 95); // 95-100%
+                updateValue('entity-count', Math.floor(seededRandom(seed + 3000) * 4)); // 0-3 entities
+
+                const pkeLevels = ['NOMINAL', 'ELEVATED', 'FLUCTUATING', 'CRITICAL'], surges = ['NEGATIVE', 'CONFIRMED'];
+                updateValue('pke-level', pkeLevels[Math.floor(seededRandom(seed + 4000) * pkeLevels.length)]);
+                updateValue('surge-status', surges[Math.floor(seededRandom(seed + 4000) * surges.length)]);
+            };
+
+            //===============================================
+            // 5. INITIALIZATION & TIMERS
+            //===============================================
+            const initializeDashboard = () => {
+                updateValue('total-agents', totalAgents);
+                updateSystemOperationalStatus();
+                performDailyUpdates();
+                updateDeployedAgents();
+                updateUptime();
+
+                setInterval(updateUptime, 1000);
+                setInterval(updateSystemOperationalStatus, 60 * 1000);
+                setInterval(updateDeployedAgents, 60 * 60 * 1000);
+
+                const setDailyUpdateTimer = () => {
+                    const now = getBangladeshiTime();
+                    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                    setTimeout(() => {
+                        performDailyUpdates();
+                        setInterval(performDailyUpdates, 24 * 60 * 60 * 1000);
+                    }, tomorrow - now);
+                };
+                setDailyUpdateTimer();
+            };
+
+            initializeDashboard();
+        });
+    </script>
+    <script src="common.js"></script>
+</body>
 </html>
