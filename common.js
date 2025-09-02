@@ -59,11 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cards.length > 0) {
             const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
             cards.forEach((card, index) => {
-                // Set initial opacity for animation
-                card.style.opacity = '0';
-                setTimeout(() => {
-                    card.style.animation = `${randomAnimation} 0.5s ease-out forwards`;
-                }, 100 * index);
+                // Add a class that sets the base animation properties.
+                // The animation-name is set dynamically, and the delay is staggered.
+                card.classList.add('animate-on-load');
+                card.style.animationName = randomAnimation;
+                card.style.animationDelay = `${100 * index}ms`;
             });
         }
     }

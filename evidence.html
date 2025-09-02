@@ -106,6 +106,7 @@
             display: flex; flex-direction: column; gap: 0.5rem;
             transform: translateX(-100%);
             transition: transform var(--transition-speed-slow) ease-in-out;
+            will-change: transform;
             overflow-y: auto;
         }
         .nav-overlay {
@@ -122,7 +123,8 @@
         .nav-button {
             display: flex; align-items: center; gap: 0.75rem; padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
             background: var(--primary-bg); border: 1px solid var(--border-color); color: var(--text-color); text-decoration: none; font-size: 1.1em;
-            transition: all var(--transition-speed-fast) ease;
+            transition: background-color var(--transition-speed-fast) ease, color var(--transition-speed-fast) ease, transform var(--transition-speed-fast) ease;
+            will-change: transform;
         }
         .nav-button.current-page { background: var(--accent-color); color: var(--primary-bg); }
         .nav-button .fa-fw { width: 20px; text-align: center; }
@@ -147,6 +149,7 @@
             animation: fade-in 1s ease-out forwards;
             transition: transform var(--transition-speed-slow) ease-in-out, filter var(--transition-speed-slow) ease-in-out;
             transform-origin: center;
+            will-change: transform, filter;
         }
         @keyframes fade-in { to { opacity: 1; } }
 
@@ -259,52 +262,52 @@
         <main class="evidence-grid">
 
             <section class="evidence-card" data-title="Artifact #001" data-img-src="images/IMG-20250217-WA0004.jpg" data-type="Spectral Frequency Recording" data-description="Audio analysis printout showcasing peaks of unexplained frequency, captured from radios in Koelpur during midnight static events. Possible djinn voice fragments detected." data-date="2024-03-10" data-clue='Hidden clue: "Frequency analysis holds secrets... within the static."'>
-                <img src="images/IMG-20250217-WA0004.jpg" alt="Spectral Frequency Recording from Koelpur">
+                <img loading="lazy" src="images/IMG-20250217-WA0004.jpg" alt="Spectral Frequency Recording from Koelpur">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #002" data-img-src="images/FB_IMG_1739953366991.jpg" data-type="Bamboo Grove Mud Sample" data-description="A sample of mud collected from the vanishing point of footprints in Amtali. Analysis reveals faint, unidentifiable imprints beneath the surface and traces of ectoplasmic residue." data-date="2024-03-12" data-clue='Hidden clue: "Imprints in mud... whispers of unseen passage."'>
-                <img src="images/FB_IMG_1739953366991.jpg" alt="Amtali Bamboo Grove Mud Sample">
+                <img loading="lazy" src="images/FB_IMG_1739953366991.jpg" alt="Amtali Bamboo Grove Mud Sample">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #003" data-img-src="images/evidence3.png" data-type="Zamindar Bari Clock Hand" data-description="A clock hand recovered from the ruins of Shonargaon Zamindar Bari, exhibiting temporal distortions. Chronometer readings fluctuate wildly near the artifact, suggesting localized time anomaly." data-date="2024-03-15" data-clue='Hidden clue: "Time bends here... observe the curvature."'>
-                <img src="images/evidence3.png" alt="Shonargaon Zamindar Bari Clock Hand">
+                <img loading="lazy" src="images/evidence3.png" alt="Shonargaon Zamindar Bari Clock Hand">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #004" data-img-src="images/evidence4.png" data-type="Bottola Baobab Bark Scraping" data-description="Bark sample from the Whispering Baobab of Bottola. Spectral analysis indicates residual vocal energy imprinted within the cellular structure, correlating with villagers' accounts of whispered names." data-date="2024-03-18" data-clue='Hidden clue: "The tree remembers... the bark may speak volumes."'>
-                <img src="images/evidence4.png" alt="Bottola Baobab Bark Scraping">
+                <img loading="lazy" src="images/evidence4.png" alt="Bottola Baobab Bark Scraping">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #005" data-img-src="images/evidence5.png" data-type="Dhoar Paani Lake Water Specimen" data-description="Water sample from Joynagar's Dhoar Paani Lake. Photographic emulsion tests revealed faint, ephemeral images imprinted upon development, mirroring phantom visions described by villagers." data-date="2024-03-20" data-clue='Hidden clue: "Water remembers faces... some lost to the depths."'>
-                <img src="images/evidence5.png" alt="Dhoar Paani Lake Water Specimen">
+                <img loading="lazy" src="images/evidence5.png" alt="Dhoar Paani Lake Water Specimen">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #006" data-img-src="images/evidence6.png" data-type="Kumarpur Cursed Charpai Wood Shard" data-description="Fragment of wood taken from the Cursed Charpai of Kumarpur. Subject exhibits heightened REM sleep activity and vivid nightmare recall when in proximity, validating claims of nocturnal torment." data-date="2024-03-22" data-clue='Hidden clue: "Wood holds echoes of nightmares... beware the slumber."'>
-                <img src="images/evidence6.png" alt="Kumarpur Cursed Charpai Wood Shard">
+                <img loading="lazy" src="images/evidence6.png" alt="Kumarpur Cursed Charpai Wood Shard">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #007" data-img-src="images/evidence7.png" data-type="Shimultola Silk Cotton Tree Resin" data-description="Resin sample collected from the Screaming Silk Cotton Tree of Shimultola. Sonic analysis reveals complex sound patterns within, amplified during full moon phases, aligning with reports of bloodcurdling screams." data-date="2024-03-25" data-clue='Hidden clue: "Resin captures cries... nature’s lament or something else?"'>
-                <img src="images/evidence7.png" alt="Shimultola Silk Cotton Tree Resin">
+                <img loading="lazy" src="images/evidence7.png" alt="Shimultola Silk Cotton Tree Resin">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #008" data-img-src="images/evidence8.png" data-type="Polashpur Night Market Shadow Dust" data-description="Minute dust particles collected from Polashpur Night Market after spectral events. When illuminated by specific wavelengths, particles project fleeting shadow puppet-like forms, mimicking vendor descriptions." data-date="2024-03-27" data-clue='Hidden clue: "Dust remembers dances... shadows reveal the players."'>
-                <img src="images/evidence8.png" alt="Polashpur Night Market Shadow Dust">
+                <img loading="lazy" src="images/evidence8.png" alt="Polashpur Night Market Shadow Dust">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #009" data-img-src="images/evidence9.png" data-type="Anderkilla Weeping Well Stone Fragment" data-description="Stone fragment from the inner lining of Anderkilla's Weeping Well. Hygroscopic properties are abnormally high, retaining moisture and emitting faint sonic vibrations resembling human weeping even when outwardly dry." data-date="2024-03-29" data-clue='Hidden clue: "Stone weeps secrets... listen to the damp resonance."'>
-                <img src="images/evidence9.png" alt="Anderkilla Weeping Well Stone Fragment">
+                <img loading="lazy" src="images/evidence9.png" alt="Anderkilla Weeping Well Stone Fragment">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 
             <section class="evidence-card" data-title="Artifact #010" data-img-src="images/evidence10.png" data-type="Minarpara Musjid Minaret Survey Data" data-description="Geodetic survey data documenting nocturnal shifts in the Minarpara Musjid minaret's position. Discrepancies indicate subtle, non-tectonic movements occurring consistently during night hours." data-date="2024-04-01" data-clue='Hidden clue: "Data reveals wanderings... structures too can stir at night."'>
-                <img src="images/evidence10.png" alt="Minarpara Musjid Minaret Survey Data">
+                <img loading="lazy" src="images/evidence10.png" alt="Minarpara Musjid Minaret Survey Data">
                 <div class="image-overlay"><i class="fa-solid fa-expand"></i></div>
             </section>
 

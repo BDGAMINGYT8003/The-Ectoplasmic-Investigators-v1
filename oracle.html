@@ -103,6 +103,7 @@
             display: flex; flex-direction: column; gap: 0.5rem;
             transform: translateX(-100%);
             transition: transform var(--transition-speed-slow) ease-in-out;
+            will-change: transform;
             overflow-y: auto;
         }
         .nav-overlay {
@@ -119,7 +120,8 @@
         .nav-button {
             display: flex; align-items: center; gap: 0.75rem; padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit);
             background: var(--primary-bg); border: 1px solid var(--border-color); color: var(--text-color); text-decoration: none; font-size: 1.1em;
-            transition: all var(--transition-speed-fast) ease;
+            transition: background-color var(--transition-speed-fast) ease, color var(--transition-speed-fast) ease, transform var(--transition-speed-fast) ease;
+            will-change: transform;
         }
         .nav-button.current-page { background: var(--accent-color); color: var(--primary-bg); }
         .nav-button .fa-fw { width: 20px; text-align: center; }
@@ -144,6 +146,7 @@
             animation: fade-in 1s ease-out forwards;
             transition: transform var(--transition-speed-slow) ease-in-out, filter var(--transition-speed-slow) ease-in-out;
             transform-origin: center;
+            will-change: transform, filter;
         }
         @keyframes fade-in { to { opacity: 1; } }
 
@@ -171,11 +174,11 @@
         .oracle-section { border-bottom: 1px solid var(--border-color); opacity: 0; }
         .oracle-section:last-child { border-bottom: none; }
         .section-title { font-size: clamp(1.5rem, 5vw, 2rem); color: var(--accent-color); padding: var(--spacing-unit) 0; width: 100%; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; background: none; border: none; text-align: left; }
-        .section-title .caret { transition: transform var(--transition-speed-fast) ease; }
-        .section-content-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--transition-speed-slow) ease-in-out; }
-        .section-content { overflow: hidden; font-size: 1.2em; line-height: 1.6; }
+        .section-title .caret { transition: transform var(--transition-speed-fast) ease; will-change: transform; }
+        .section-content-wrapper { max-height: 0; overflow: hidden; transition: max-height var(--transition-speed-slow) ease-in-out; }
+        .section-content { font-size: 1.2em; line-height: 1.6; }
         .section-content-inner { background: var(--primary-bg); border: 1px solid var(--border-color); padding: 1.5rem; margin-bottom: var(--spacing-unit); }
-        .oracle-section.is-open .section-content-wrapper { grid-template-rows: 1fr; }
+        .oracle-section.is-open .section-content-wrapper { max-height: 1000px; /* Adjust as needed */ }
         .oracle-section.is-open .section-title .caret { transform: rotate(90deg); }
         .section-content ul { list-style-type: none; padding-left: 0; margin-top: var(--spacing-unit); }
         .section-content ul li { margin-bottom: 1rem; padding-left: 1.5rem; position: relative; }
